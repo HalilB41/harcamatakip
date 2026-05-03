@@ -182,17 +182,24 @@
                 </ul>
             </div>
 
-            <!-- Alt: Yüzleşme Metinleri Yönetimi -->
+            <!-- Alt: Yeni Birim Fiyat Yönetimi -->
             <div class="panel" style="grid-column: 1 / -1; border-top: 4px solid #f59e0b;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <div>
-                        <h3>Yüzleşme Metinleri ve Fiyat Aralıkları</h3>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Maksimum tutarı ve o aralıkta rastgele çıkacak esprileri (virgülle ayırarak) düzenle.</p>
+                        <h3>Ürün ve Birim Fiyat Yönetimi (Yeni Motor)</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Sistem kullanıcının harcadığı paraya en yakın 3 üründen birini rastgele seçip, matematiği kendi yapar.</p>
                     </div>
-                    <button id="btn-save-funny-texts" class="action-btn" style="width: auto; background: #f59e0b; color: #000;">Değişiklikleri Kaydet</button>
+                    <button id="btn-save-items" class="action-btn" style="width: auto; background: #f59e0b; color: #000;">Değişiklikleri Kaydet</button>
                 </div>
                 
-                <div id="admin-funny-list" class="funny-settings-grid">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px dashed #f59e0b;">
+                    <input type="text" id="new-item-name" placeholder="Ürün Adı (Örn: Tofaş)" style="margin: 0;">
+                    <input type="number" id="new-item-price" placeholder="Fiyat (₺)" style="margin: 0; width: 150px;">
+                    <input type="text" id="new-item-action" placeholder="Eylem (Örn: alabilirdin, yiyebilirdin)" style="margin: 0;">
+                    <button id="btn-add-item" class="action-btn" style="width: auto; padding: 0 30px;">Ekle</button>
+                </div>
+                
+                <div id="admin-item-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 10px; max-height: 500px; overflow-y: auto; padding-right: 10px;">
                     <!-- JS Dolduracak -->
                 </div>
             </div>

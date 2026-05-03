@@ -24,17 +24,17 @@ const btnAdminPanel = document.getElementById('btn-admin-panel');
 let expenseChart;
 let globalExpenses = [];
 let currentChartFilter = 'weekly';
-let appConfig = {}; // Tük kategori ve yüzleşme metinleri burada tutulacak
+let appConfig = {}; 
 
-// --- SİSTEM AYARLARINI (KATEGORİLER VE YÜZLEŞMELER) ÇEK ---
+// --- YENİ BİRİM FİYAT SİSTEMİNİ ÇEK ---
 async function loadAppConfig() {
-    const docRef = doc(db, "settings", "app_config");
+    const docRef = doc(db, "settings", "app_config_v2");
     const docSnap = await getDoc(docRef);
     
-    if (docSnap.exists()) {
+    if (docSnap.exists() && docSnap.data().items) {
         appConfig = docSnap.data();
     } else {
-        // Eğer veritabanında henüz ayar yoksa, senin yazdığın listeyi varsayılan olarak kaydet
+        // Yeni sistemin varsayılan veritabanı (Senin liste)
         appConfig = {
             categories: [
                 { id: "yeme_icme", name: "Yeme & İçme", placeholder: "Örn: Dürüm yedi, kahve içti..." },
@@ -49,25 +49,59 @@ async function loadAppConfig() {
                 { id: "giyim_kozmetik", name: "Giyim & Kozmetik", placeholder: "Örn: Ayakkabı, parfüm..." },
                 { id: "ev_esyasi", name: "Ev Eşyası", placeholder: "Örn: Vantilatör, banyo rafı..." }
             ],
-            funnyTexts: [
-                { max: 100, items: ["4 tane 0.5L şişe su alabilirdin", "1 tane Magnum alabilirdin", "1 tane pizza tadında simit alabilirdin", "1 porsiyon etsiz çiğ köfte dürüm yiyebilirdin", "BİM'den 2 paket büyük boy cips alabilirdin"] },
-                { max: 200, items: ["1 tane tavuk dürüm menü alabilirdin", "İzmit-Arifiye arası TCDD Genç bileti alabilirdin", "ortalama bir kafede 1 bardak filtre kahve içebilirdin", "50cc scooter için 1-2 litre benzin alabilirdin", "1 aylık Netflix temel plan ödeyebilirdin"] },
-                { max: 300, items: ["Steam'den indirimli güzel bir oyun alabilirdin", "scooter için yeni bir buji alabilirdin", "1 kişilik sinema bileti alabilirdin", "1 aylık Spotify Premium ödeyebilirdin", "Komagene'den 1 porsiyon etsiz çiğ köfte porsiyon alabilirdin"] },
-                { max: 500, items: ["Clash of Clans'tan 'Taş Yığını' paketi alabilirdin", "İzmit-Arifiye arası şehirlerarası otobüs bileti alabilirdin", "1 aylık Adobe Creative Cloud öğrenci aboneliği ödeyebilirdin", "Packet burgerde sınırsız içicekli bir hamburger menü yiyebilirdin", "Gariban bir mouse alabilirdin"] },
-                { max: 1000, items: ["Vercel veya Firebase için aylık ekstra kullanım ücreti/domain yenilemesi ödeyebilirdin", "Steam'den Hearts of Iron IV veya GTA V'i indirimsiz alabilirdin", "eve 3'lü banyo rafı seti alabilirdin", "indirimden ortalama bir spor ayakkabı tabanı alabilirdin", "Damar tıkama garantili bir akşam yemeği yiyebilirdin"] },
-                { max: 1500, items: ["nevresim takımı alabilirdin", "odaya ayaklı vantilatör alabilirdin", "A2 seviye Almanca çalışma seti ve kitapları alabilirdin", "giriş seviyesi mekanik baş ağrıtan oyuncu klavyesi alabilirdin", "dandik bir akıllı saat alabilirdin"] },
-                { max: 3000, items: ["Motorunun deposunu fulleyebilirdin", "giriş seviyesi bir monitör alabilirdin", "ortalama bir Airfryer alabilirdin", "100 tane torpil alıp patlatabilirdin", "1 yıllık Office 365 lisansı alabilirdin"] },
-                { max: 5000, items: ["Kripto borsasında 100 dolarlık ufak bir long/short marjin kasası yapabilirdin", "Orta halli 2-3 tane akıllı telefon kılıfı alabilirdin", "PlayStation 5 için 2 adet yeni nesil oyun alabilirdin", "ortalama bir motosiklet montu alabilirdin", "giriş-orta seviye bir robot süpürge alabilirdin"] },
-                { max: 10000, items: ["Bükreş'e gidiş-dönüş uçak bileti alabilirdin", "orta segment bir tablet alabilirdin", "Bisiklet alabilirdin", "gram altın alabilirdin", "ev için orta kalite bir televizyon alabilirdin"] },
-                { max: 20000, items: ["Xbox 360 veya PS4 alabilirdin", "iş görecek orta halli bir laptop alabilirdin", "Xiaomi telefon alabilirdin", "odaya klima taktırabilirdin", "Nikon D3200 18-55 mm Kit Fotoğraf Makinesi alabilirdin"] },
-                { max: 50000, items: ["İkinci el temiz 50cc Cappucino tarzı bir scooter alabilirdin", "orta düzey bir oyuncu bilgisayarı dizebilirdin", "amiral gemisi bir akıllı telefon (iPhone 15/16) alabilirdin", "kaliteli bir tatil köyünde ortalama bir tatil yapabilirdin", "bedelli askerlik ücretinin 1/10 kısmını denkleştirebilirdin"] },
-                { max: 100000, items: ["bedelli askerlik ücretinin yaklaşık 1/7 kısmını yatırabilirdin", "ikinci el 125cc temiz bir motosiklet alabilirdin", "MacBook Pro 14 inc M3 1TB Gümüş alabilirdin", "Balkan turuna çıkabilirdin", "yeni ev kiralarken peşinat+depozito+emlakçı masrafını tek kalemde ödeyebilirdin"] },
-                { max: 200000, items: ["CFMoto CLX250 tarzı uygun fiyata sıfıra yakın bir motosiklet alabilirdin", "ayağını yerden kesecek çok eski model bir araba (Tofaş/Brodway) alabilirdin", "küçük çaplı bir e-ticaret işi kurmak için sermaye yapabilirdin", "Rado Captain Cook Automatic Erkek Kol Saati alabilirdin", "evin banyo ve mutfağını baştan aşağı tadilata sokabilirdin"] },
-                { max: 500000, items: ["2010 model altı orta halli ikinci el bir araba alabilirdin", "600cc ve üzeri büyük hacimli motosiklet alabilirdin", "şehir dışında yatırımlık ufak bir arsa alabilirdin", "1 yıllık yurt dışı dil okulu masrafını karşılayabilirdin"] },
-                { max: 1000000, items: ["2015-2020 arası B veya C segment ikinci el bir araba alabilirdin", "Anadolu'nun daha küçük şehirlerinde 1+0 apart daire alabilirdin", "tatillere gitmek için orta bir karavan alabilirdin", "borsada veya kriptoda sağlam bir yatırım portföyü kurabilirdin"] },
-                { max: 3000000, items: ["İzmit gibi büyükşehirlerde ortalama bir 2+1 ev alabilirdin", "sıfır kilometre C-SUV segmentinde bir araç alabilirdin", "lüks segment ikinci el bir araç (BMW, Mercedes) alabilirdin", "orta ölçekli bir bilindik marka franchise bayiliği açabilirdin"] },
-                { max: 5000000, items: ["küçük şehirlerde lüks bir daire veya site içi ev alabilirdin", "premium sınıf 2.el bir araç (Porsche Macan, Audi Q7 vb.) alabilirdin", "Marmara bölgesinde tarıma ve yatırıma uygun büyük bir tarla alabilirdin", "giriş seviyesi tekne alabilirdin", "Balkanlar'da yatırım ve kira amaçlı bir ev alabilirdin"] },
-                { max: 99999999, items: ["İstanbul'da iyi bir semtte geniş ve lüks bir ev alabilirdin", "üst düzey lüks spor araba (Porsche 911, Maserati vb.) alabilirdin", "Bodrum veya Çeşme'de güzel bir yazlık villa alabilirdin", "fabrika veya atölye kurmak için orta ölçekli sanayi yatırımı yapabilirdin", "aylık ciddi pasif kira getirisi sağlayacak merkezi bir ticari dükkan alabilirdin"] }
+            items: [
+                { name: "0.5L su", price: 5, action: "alabilirdin" },
+                { name: "gofret", price: 15, action: "alabilirdin" },
+                { name: "ayran", price: 20, action: "alabilirdin" },
+                { name: "torpil", price: 20, action: "patlatabilirdin" },
+                { name: "kurşun kalem", price: 25, action: "alabilirdin" },
+                { name: "albeni bisküvi", price: 40, action: "alabilirdin" },
+                { name: "cips", price: 50, action: "alabilirdin" },
+                { name: "pizza tadında simit", price: 85, action: "alabilirdin" },
+                { name: "magnum dondurma", price: 95, action: "alabilirdin" },
+                { name: "bardak", price: 100, action: "alabilirdin" },
+                { name: "çiğköfte dürüm", price: 110, action: "yiyebilirdin" },
+                { name: "lahmacun", price: 125, action: "yiyebilirdin" },
+                { name: "defter", price: 150, action: "alabilirdin" },
+                { name: "komagene double dürüm + ayran", price: 150, action: "yiyebilirdin" },
+                { name: "clash of clans taş yığını paketi", price: 199, action: "alabilirdin" },
+                { name: "havlu", price: 250, action: "alabilirdin" },
+                { name: "terlik", price: 250, action: "alabilirdin" },
+                { name: "packet burger sınırsız içecek menü", price: 285, action: "yiyebilirdin" },
+                { name: "pastanede tek kişilik pasta", price: 299, action: "yiyebilirdin" },
+                { name: "kfc doyuran menü", price: 300, action: "yiyebilirdin" },
+                { name: "adana dürüm", price: 350, action: "yiyebilirdin" },
+                { name: "çöp kutusu", price: 450, action: "alabilirdin" },
+                { name: "gariban mouse", price: 500, action: "alabilirdin" },
+                { name: "dominos xl pizza", price: 599, action: "yiyebilirdin" },
+                { name: "laptop soğutucu", price: 650, action: "alabilirdin" },
+                { name: "mousepad", price: 750, action: "alabilirdin" },
+                { name: "eşofman", price: 999, action: "alabilirdin" },
+                { name: "gta 5", price: 1200, action: "alabilirdin" },
+                { name: "nevresim takımı", price: 1250, action: "alabilirdin" },
+                { name: "sakarya aquapark giriş bileti", price: 1500, action: "alabilirdin" },
+                { name: "motorunun deposunu fulleme", price: 1500, action: "yapabilirdin" },
+                { name: "logitech mouse", price: 1700, action: "alabilirdin" },
+                { name: "nike çanta", price: 2000, action: "alabilirdin" },
+                { name: "hamam masaj jakuzi", price: 2500, action: "yapabilirdin" },
+                { name: "giriş seviyesi monitör", price: 3000, action: "alabilirdin" },
+                { name: "ortalama bir airfryer", price: 3200, action: "alabilirdin" },
+                { name: "1 yıllık microsoft office aboneliği", price: 3250, action: "alabilirdin" },
+                { name: "bodrumda tatil", price: 12000, action: "yapabilirdin" },
+                { name: "apple watch se 3 gps alüminyum kasa", price: 13000, action: "alabilirdin" },
+                { name: "lenovo loq 5060", price: 48000, action: "alabilirdin" },
+                { name: "iyi bir oyuncu kasası", price: 55000, action: "toplayabilirdin" },
+                { name: "sıfır arora cappucinino 50cc motor", price: 72500, action: "alabilirdin" },
+                { name: "iphone 17", price: 75000, action: "alabilirdin" },
+                { name: "tofaş", price: 118695, action: "alabilirdin" },
+                { name: "kriptoya ortalama bir bakiye ile giriş", price: 150000, action: "yapabilirdin" },
+                { name: "ford escort", price: 167000, action: "alabilirdin" },
+                { name: "bedelli askerlik", price: 425000, action: "yapabilirdin" },
+                { name: "600cc ve üzeri bir motor", price: 485000, action: "alabilirdin" },
+                { name: "araba egea", price: 1200000, action: "alabilirdin" },
+                { name: "2+1 ev", price: 2500000, action: "alabilirdin" },
+                { name: "3+1 ev", price: 3500000, action: "alabilirdin" },
+                { name: "giriş seviye bir tekne", price: 3500000, action: "alabilirdin" }
             ]
         };
         await setDoc(docRef, appConfig);
@@ -76,7 +110,6 @@ async function loadAppConfig() {
 }
 
 function populateUI() {
-    // 1. Kategorileri UI'a bas
     const catSelect = document.getElementById('category');
     const filterSelect = document.getElementById('history-filter');
     catSelect.innerHTML = '<option value="" disabled selected>Kategori Seç...</option>';
@@ -127,7 +160,7 @@ document.getElementById('btn-logout').addEventListener('click', () => signOut(au
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         authView.classList.add('hidden'); dashboardView.classList.remove('hidden');
-        await loadAppConfig(); // Sistemi ayağa kaldır
+        await loadAppConfig(); 
         
         const userDocQuery = await getDocs(query(collection(db, "users"), where("email", "==", user.email)));
         if (!userDocQuery.empty) {
@@ -142,7 +175,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-
 // --- YENİ ADMİN PANELİ FONKSİYONLARI ---
 btnAdminPanel.addEventListener('click', async () => {
     dashboardView.classList.add('hidden');
@@ -154,14 +186,12 @@ btnAdminPanel.addEventListener('click', async () => {
 document.getElementById('btn-back-dashboard').addEventListener('click', () => {
     adminView.classList.add('hidden');
     dashboardView.classList.remove('hidden');
-    populateUI(); // Geri dönerken değişiklikleri ana ekrana yansıt
+    populateUI(); 
 });
 
-// 1. Son Kayıt Olan Kullanıcılar (Sadece Admin görür)
 async function loadAdminUsers() {
     const tbody = document.getElementById('admin-users-body');
     tbody.innerHTML = '<tr><td colspan="3">Yükleniyor...</td></tr>';
-    // Kullanıcıları kayıt tarihine göre sırala (En son kayıt olan en üstte)
     const q = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(10)); 
     const snapshot = await getDocs(q);
     
@@ -179,7 +209,6 @@ async function loadAdminUsers() {
     });
 }
 
-// 2. Ayarları Yükle (Admin Ekranına)
 function loadAdminSettings() {
     // Kategorileri Bas
     const catList = document.getElementById('admin-cat-list');
@@ -193,26 +222,27 @@ function loadAdminSettings() {
         `;
     });
 
-    // Yüzleşme Metinlerini Bas
-    const funnyList = document.getElementById('admin-funny-list');
-    funnyList.innerHTML = '';
-    appConfig.funnyTexts.forEach((item, index) => {
-        const textStr = item.items.join('\n'); // Alt alta görünsün diye
-        funnyList.innerHTML += `
-            <div class="funny-card">
-                <label>Max: <input type="number" id="f-max-${index}" value="${item.max}" style="width:100px; padding:5px; margin-bottom:0; display:inline-block;"></label>
-                <textarea id="f-text-${index}" placeholder="Esprileri alt alta yaz...">${textStr}</textarea>
+    // Yeni Birim Fiyat (Items) Listesini Bas
+    const itemList = document.getElementById('admin-item-list');
+    itemList.innerHTML = '';
+    // Pahalıdan ucuza sıralı gösterelim ki admin rahat görsün
+    appConfig.items.sort((a, b) => b.price - a.price).forEach((item, index) => {
+        itemList.innerHTML += `
+            <div style="display: flex; gap: 5px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid #333; align-items: center;">
+                <input type="text" id="i-name-${index}" value="${item.name}" style="margin:0; flex: 2; padding: 8px;">
+                <input type="number" id="i-price-${index}" value="${item.price}" style="margin:0; flex: 1; padding: 8px;">
+                <input type="text" id="i-action-${index}" value="${item.action}" style="margin:0; flex: 1.5; padding: 8px;">
+                <button class="icon-btn del-btn" onclick="deleteItem(${index})" style="margin: 0 0 0 5px;"><i class="fa-solid fa-trash"></i></button>
             </div>
         `;
     });
 }
 
-// Kategori Ekle/Sil
+// Kategori İşlemleri
 document.getElementById('btn-add-cat').addEventListener('click', async () => {
     const name = document.getElementById('new-cat-name').value;
     const placeholder = document.getElementById('new-cat-placeholder').value;
     if(!name) return;
-    
     const id = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
     appConfig.categories.push({ id, name, placeholder });
     await saveSettingsToDB();
@@ -229,40 +259,75 @@ window.deleteCategory = async (index) => {
     }
 };
 
-// Yüzleşme Metinlerini Kaydet
-document.getElementById('btn-save-funny-texts').addEventListener('click', async () => {
-    appConfig.funnyTexts.forEach((item, index) => {
-        item.max = parseFloat(document.getElementById(`f-max-${index}`).value);
-        // Textarea'daki her satırı diziye çevirip boş olanları atıyoruz
-        const rawTexts = document.getElementById(`f-text-${index}`).value;
-        item.items = rawTexts.split('\n').map(t => t.trim()).filter(t => t !== "");
-    });
-    // Max tutara göre küçükten büyüğe sırala ki algoritma düzgün çalışsın
-    appConfig.funnyTexts.sort((a,b) => a.max - b.max);
+// YENİ: Ürün (Item) Ekleme ve Silme İşlemleri
+document.getElementById('btn-add-item').addEventListener('click', async () => {
+    const name = document.getElementById('new-item-name').value;
+    const price = parseFloat(document.getElementById('new-item-price').value);
+    const action = document.getElementById('new-item-action').value;
+    
+    if(!name || isNaN(price) || !action) return alert("Hepsini doldur aga!");
+    
+    appConfig.items.push({ name, price, action });
     await saveSettingsToDB();
-    alert("Yüzleşme metinleri başarıyla güncellendi kanka!");
+    document.getElementById('new-item-name').value = '';
+    document.getElementById('new-item-price').value = '';
+    document.getElementById('new-item-action').value = '';
+    loadAdminSettings();
+});
+
+window.deleteItem = async (index) => {
+    if(confirm("Bu ürünü listeden uçurayım mı?")) {
+        appConfig.items.splice(index, 1);
+        await saveSettingsToDB();
+        loadAdminSettings();
+    }
+};
+
+// Item Güncellemelerini Kaydet (Inputs'tan oku)
+document.getElementById('btn-save-items').addEventListener('click', async () => {
+    appConfig.items.forEach((item, index) => {
+        item.name = document.getElementById(`i-name-${index}`).value;
+        item.price = parseFloat(document.getElementById(`i-price-${index}`).value);
+        item.action = document.getElementById(`i-action-${index}`).value;
+    });
+    await saveSettingsToDB();
+    alert("Ürünler ve fiyatlar başarıyla güncellendi kanka!");
     loadAdminSettings();
 });
 
 async function saveSettingsToDB() {
-    await setDoc(doc(db, "settings", "app_config"), appConfig);
+    await setDoc(doc(db, "settings", "app_config_v2"), appConfig);
 }
 
-// --- DİNAMİK YÜZLEŞME MOTORU (Veritabanından Okur) ---
+// --- YENİ BİRİM FİYAT VE ZEKİ SEÇİM MOTORU ---
 function getFunnyText(amount) {
-    const getRnd = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    
-    for (let i = 0; i < appConfig.funnyTexts.length; i++) {
-        if (amount <= appConfig.funnyTexts[i].max) {
-            return getRnd(appConfig.funnyTexts[i].items);
-        }
+    if (!appConfig.items || appConfig.items.length === 0) return "hesaplayamadım, bir şeyler ters gitti";
+
+    // 1. Sadece kullanıcının parasının yettiği (paraya eşit veya daha ucuz) eşyaları bul
+    let affordableItems = appConfig.items.filter(item => item.price <= amount);
+
+    // 2. Parası en ucuz şeye bile yetmiyorsa dalga geç
+    if (affordableItems.length === 0) {
+        return "bu paraya sakız bile vermezler, biriktirmeye devam";
     }
-    // Eğer girilen rakam en büyükten bile büyükse en sondakini ver
-    return getRnd(appConfig.funnyTexts[appConfig.funnyTexts.length - 1].items);
+
+    // 3. Eşyaları fiyatına göre pahalıdan ucuza sırala
+    affordableItems.sort((a, b) => b.price - a.price);
+
+    // 4. Paranın yettiği EN PAHALI 3 ürünü al (Hep aynı şeyi önermesin diye çeşitlilik)
+    let topItems = affordableItems.slice(0, 3);
+
+    // 5. Bu 3 üründen birini RASTGELE seç
+    let selectedItem = topItems[Math.floor(Math.random() * topItems.length)];
+
+    // 6. Seçilen üründen o paraya tam kaç tane alınabildiğini hesapla
+    let count = Math.floor(amount / selectedItem.price);
+
+    // Çıktıyı ver
+    return `tam ${count} adet ${selectedItem.name} ${selectedItem.action}`;
 }
 
-
-// --- KULLANICI İŞLEMLERİ VE TABLO/GRAFİK (Öncekiyle aynı) ---
+// --- KULLANICI İŞLEMLERİ VE TABLO/GRAFİK ---
 async function fetchAndRenderData() {
     const q = query(collection(db, "expenses"), where("uid", "==", auth.currentUser.uid));
     const snapshot = await getDocs(q);
@@ -277,7 +342,6 @@ function renderTable() {
     const tbody = document.getElementById('history-body');
     tbody.innerHTML = '';
 
-    // Kategorilerin isimlerini bulmak için helper
     const getCatName = (id) => {
         const c = appConfig.categories.find(x => x.id === id);
         return c ? c.name : id;
