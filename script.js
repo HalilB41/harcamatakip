@@ -34,7 +34,7 @@ async function loadAppConfig() {
         appConfig = docSnap.data();
     } else {
         appConfig = {
-            tolerance: 20, // YENİ YÜZDELİK AYAR (VARSAYILAN %20)
+            tolerance: 20, 
             categories: [
                 { id: "yeme_icme", name: "Yeme & İçme", placeholder: "Örn: Dürüm yedi, kahve içti..." },
                 { id: "market", name: "Market", placeholder: "Örn: Cips, mutfak alışverişi..." },
@@ -302,7 +302,7 @@ async function saveSettingsToDB() {
     await setDoc(doc(db, "settings", "app_config_v2"), appConfig);
 }
 
-// --- YENİ ZEKİ SEÇİM MOTORU (% ARALIKLI) ---
+// --- YENİ ZEKİ SEÇİM MOTORU (% ARALIKLI) ADET OLMADAN ---
 function getFunnyText(amount) {
     if (!appConfig.items || appConfig.items.length === 0) return "hesaplayamadım, bir şeyler ters gitti";
 
@@ -313,10 +313,10 @@ function getFunnyText(amount) {
     let minPrice = amount * (1 - (tolerance / 100));
     let maxPrice = amount * (1 + (tolerance / 100));
 
-    // Bu aralıktaki tüm ürünleri bul (3 tane ile sınırlandırmıyoruz, ne varsa)
+    // Bu aralıktaki tüm ürünleri bul
     let affordableItems = appConfig.items.filter(item => item.price >= minPrice && item.price <= maxPrice);
 
-    // Joker Durum: Eğer bu aralıkta hiç ürün yoksa, sistem çökmesin diye eski mantıktaki gibi ucuz ürünlerden rastgele çeker
+    // Joker Durum: Eğer bu aralıkta hiç ürün yoksa, adamın parasına yeten herhangi bir şeyi bul
     if (affordableItems.length === 0) {
         affordableItems = appConfig.items.filter(item => item.price <= amount);
         if (affordableItems.length === 0) return "bu paraya sakız bile vermezler, biriktirmeye devam";
@@ -325,12 +325,8 @@ function getFunnyText(amount) {
     // Seçilen havuzdan Tümüyle RASTGELE birini al
     let selectedItem = affordableItems[Math.floor(Math.random() * affordableItems.length)];
 
-    // Kaç adet alındığını hesapla. Ürün adamın parasından pahalıysa küsurat çıkar (örn: 0.8)
-    let count = amount / selectedItem.price;
-    // Eğer 1'den büyükse düz hesap (Math.floor), 1'den küçükse 0.x şeklinde göstersin
-    let displayCount = count >= 1 ? Math.floor(count) : count.toFixed(1);
-
-    return `tam ${displayCount} adet ${selectedItem.name} ${selectedItem.action}`;
+    // ADET YAZISINI VE KÜSÜRATLARI SİLDİK. DİREKT İSMİ YAPIŞTIRIYOR
+    return `${selectedItem.name} ${selectedItem.action}`;
 }
 
 // --- KULLANICI İŞLEMLERİ VE TABLO/GRAFİK ---
