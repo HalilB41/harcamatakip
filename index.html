@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harcama Takibim</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- VİTRİN VE AUTH -->
+    <div id="auth-view" class="auth-wrapper">
+        <div class="auth-left">
+            <h1 class="brand-title">Harcama<span class="highlight">Takibim</span></h1>
+            <p class="brand-desc">Paran nereye eriyor? Ufak tefek harcamaların ay sonu faturasını gör, acı gerçekle şık bir şekilde yüzleş.</p>
+        </div>
+        
+        <div class="auth-right">
+            <div class="auth-box">
+                <div class="auth-tabs">
+                    <button id="tab-login" class="active">Giriş Yap</button>
+                    <button id="tab-register">Kayıt Ol</button>
+                </div>
+
+                <form id="login-form">
+                    <input type="email" id="login-email" placeholder="E-posta" required>
+                    <input type="password" id="login-pass" placeholder="Şifre" required>
+                    <button type="submit" class="action-btn">Giriş Yap</button>
+                </form>
+
+                <form id="register-form" class="hidden">
+                    <input type="text" id="reg-username" placeholder="Kullanıcı Adı" required>
+                    <input type="email" id="reg-email" placeholder="E-posta" required>
+                    <input type="password" id="reg-pass" placeholder="Şifre (En az 6 hane)" required>
+                    <button type="submit" class="action-btn">Kayıt Ol</button>
+                </form>
+                <p id="auth-error" class="error-msg"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANA PANEL (DASHBOARD) -->
+    <div id="dashboard-view" class="hidden">
+        <nav class="navbar">
+            <h2>Harcama<span class="highlight">Takibim</span></h2>
+            <div class="user-menu">
+                <button id="btn-admin-panel" class="action-btn hidden" style="background: #f59e0b; color: #000; padding: 8px 16px; width: auto; margin-right: 15px;">👑 Admin Paneli</button>
+                <span id="display-username">Hoş geldin, Kanki</span>
+                <button id="btn-logout" class="logout-btn">Çıkış</button>
+            </div>
+        </nav>
+
+        <div class="dashboard-grid">
+            <!-- Sol: Grafik -->
+            <div class="chart-section panel">
+                <h3>Harcama Grafiği</h3>
+                <div class="chart-filters">
+                    <button class="filter-btn" data-range="daily">Bugün (Saatlik)</button>
+                    <button class="filter-btn active" data-range="weekly">Haftalık</button>
+                    <button class="filter-btn" data-range="monthly">Aylık</button>
+                    <button class="filter-btn" data-range="custom">Tarih Seç</button>
+                </div>
+                <div id="custom-date-container" class="custom-date-container hidden">
+                    <input type="date" id="start-date" title="Başlangıç">
+                    <input type="date" id="end-date" title="Bitiş">
+                    <button id="btn-custom-filter" class="action-btn">Uygula</button>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Sağ: Ekleme -->
+            <div class="add-section panel">
+                <h3>Yeni Harcama Ekle</h3>
+                <div class="form-group">
+                    <select id="category">
+                        <!-- JS DİNAMİK OLARAK DOLDURACAK -->
+                        <option value="" disabled selected>Kategori Seç...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="detail" placeholder="Önce kategori seç...">
+                </div>
+                <div class="form-group">
+                    <input type="number" id="amount" placeholder="Tutar (₺)">
+                </div>
+                <button id="btn-add-expense" class="action-btn">Ekle ve Yüzleş</button>
+
+                <div id="result-box" class="result-box hidden">
+                    <h4 id="result-title"></h4>
+                    <p id="result-funny"></p>
+                </div>
+            </div>
+
+            <!-- Alt: Geçmiş ve Filtre -->
+            <div class="history-section panel" style="grid-column: 1 / -1;">
+                <div class="history-header">
+                    <h3>Harcama Geçmişi</h3>
+                    <select id="history-filter">
+                        <!-- JS DİNAMİK OLARAK DOLDURACAK -->
+                        <option value="all">Tüm Kategoriler</option>
+                    </select>
+                </div>
+                <div class="table-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Kategori</th>
+                                <th>Detay</th>
+                                <th>Tutar</th>
+                                <th>İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DÜZENLEME MODALI -->
+    <div id="edit-modal" class="modal-overlay hidden">
+        <div class="modal-box panel">
+            <h3>Harcamayı Düzenle</h3>
+            <input type="hidden" id="edit-id">
+            <div class="form-group">
+                <input type="text" id="edit-detail" placeholder="Detay">
+            </div>
+            <div class="form-group">
+                <input type="number" id="edit-amount" placeholder="Tutar">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-save-edit" class="action-btn" style="background: var(--primary); color: #000;">Kaydet</button>
+                <button id="btn-cancel-edit" class="action-btn" style="background: #333; color: #fff;">İptal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GİZLİ ADMİN PANELİ EKRANI -->
+    <div id="admin-view" class="hidden" style="max-width: 1400px; margin: 40px auto; padding: 0 50px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: #f59e0b; margin: 0;">👑 Admin Kontrol Merkezi</h2>
+            <button id="btn-back-dashboard" class="action-btn" style="width: auto; background: #333; color: white;">Geri Dön</button>
+        </div>
+
+        <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr;">
+            <!-- Sol: Son Kullanıcılar -->
+            <div class="panel" style="border-top: 4px solid #38bdf8;">
+                <h3>Son Kayıt Olan Kullanıcılar</h3>
+                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Kullanıcı Adı</th>
+                                <th>E-posta</th>
+                                <th>Kayıt Tarihi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sağ: Kategori Yönetimi -->
+            <div class="panel" style="border-top: 4px solid var(--primary);">
+                <h3>Sistem Kategorilerini Yönet</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Sitedeki harcama kategorilerini buradan ekleyip silebilirsin.</p>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="new-cat-name" placeholder="Kategori Adı (Örn: Tatil)">
+                    <input type="text" id="new-cat-placeholder" placeholder="Örnek Metin (Örn: Bilet aldım...)">
+                    <button id="btn-add-cat" class="action-btn" style="width: auto; padding: 0 20px;">Ekle</button>
+                </div>
+                
+                <ul id="admin-cat-list" class="admin-list">
+                    <!-- JS Dolduracak -->
+                </ul>
+            </div>
+
+            <!-- Alt: Yüzleşme Metinleri Yönetimi -->
+            <div class="panel" style="grid-column: 1 / -1; border-top: 4px solid #f59e0b;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div>
+                        <h3>Yüzleşme Metinleri ve Fiyat Aralıkları</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Maksimum tutarı ve o aralıkta rastgele çıkacak esprileri (virgülle ayırarak) düzenle.</p>
+                    </div>
+                    <button id="btn-save-funny-texts" class="action-btn" style="width: auto; background: #f59e0b; color: #000;">Değişiklikleri Kaydet</button>
+                </div>
+                
+                <div id="admin-funny-list" class="funny-settings-grid">
+                    <!-- JS Dolduracak -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
