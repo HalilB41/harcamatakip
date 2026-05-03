@@ -186,8 +186,12 @@
             <div class="panel" style="grid-column: 1 / -1; border-top: 4px solid #f59e0b;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <div>
-                        <h3>Ürün ve Birim Fiyat Yönetimi (Yeni Motor)</h3>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Sistem kullanıcının harcadığı paraya en yakın 3 üründen birini rastgele seçip, matematiği kendi yapar.</p>
+                        <h3>Ürün ve Birim Fiyat Yönetimi</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Sistem kullanıcının harcadığı fiyata <span class="highlight">belirlediğin % aralığında</span> yakın olan ürünlerden rastgele seçer.</p>
+                        <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                            <label style="font-size: 0.9rem; color: #fff;">Fiyat Yakınlık Aralığı (+-%):</label>
+                            <input type="number" id="admin-tolerance" style="width: 80px; margin: 0; padding: 5px; text-align: center;" value="20">
+                        </div>
                     </div>
                     <button id="btn-save-items" class="action-btn" style="width: auto; background: #f59e0b; color: #000;">Değişiklikleri Kaydet</button>
                 </div>

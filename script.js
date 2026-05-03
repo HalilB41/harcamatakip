@@ -26,7 +26,6 @@ let globalExpenses = [];
 let currentChartFilter = 'weekly';
 let appConfig = {}; 
 
-// --- YENİ BİRİM FİYAT SİSTEMİNİ ÇEK ---
 async function loadAppConfig() {
     const docRef = doc(db, "settings", "app_config_v2");
     const docSnap = await getDoc(docRef);
@@ -34,8 +33,8 @@ async function loadAppConfig() {
     if (docSnap.exists() && docSnap.data().items) {
         appConfig = docSnap.data();
     } else {
-        // Yeni sistemin varsayılan veritabanı (Senin liste)
         appConfig = {
+            tolerance: 20, // YENİ YÜZDELİK AYAR (VARSAYILAN %20)
             categories: [
                 { id: "yeme_icme", name: "Yeme & İçme", placeholder: "Örn: Dürüm yedi, kahve içti..." },
                 { id: "market", name: "Market", placeholder: "Örn: Cips, mutfak alışverişi..." },
@@ -222,10 +221,13 @@ function loadAdminSettings() {
         `;
     });
 
-    // Yeni Birim Fiyat (Items) Listesini Bas
+    // Tolerance (Yüzdelik) Ayarını Bas
+    const tolInput = document.getElementById('admin-tolerance');
+    if(tolInput) tolInput.value = appConfig.tolerance !== undefined ? appConfig.tolerance : 20;
+
+    // Ürünleri Bas
     const itemList = document.getElementById('admin-item-list');
     itemList.innerHTML = '';
-    // Pahalıdan ucuza sıralı gösterelim ki admin rahat görsün
     appConfig.items.sort((a, b) => b.price - a.price).forEach((item, index) => {
         itemList.innerHTML += `
             <div style="display: flex; gap: 5px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid #333; align-items: center;">
@@ -238,7 +240,6 @@ function loadAdminSettings() {
     });
 }
 
-// Kategori İşlemleri
 document.getElementById('btn-add-cat').addEventListener('click', async () => {
     const name = document.getElementById('new-cat-name').value;
     const placeholder = document.getElementById('new-cat-placeholder').value;
@@ -259,7 +260,6 @@ window.deleteCategory = async (index) => {
     }
 };
 
-// YENİ: Ürün (Item) Ekleme ve Silme İşlemleri
 document.getElementById('btn-add-item').addEventListener('click', async () => {
     const name = document.getElementById('new-item-name').value;
     const price = parseFloat(document.getElementById('new-item-price').value);
@@ -283,15 +283,18 @@ window.deleteItem = async (index) => {
     }
 };
 
-// Item Güncellemelerini Kaydet (Inputs'tan oku)
+// Item Güncellemelerini ve Yüzde Ayarını Kaydet
 document.getElementById('btn-save-items').addEventListener('click', async () => {
+    // Admin panelinden tolerans yüzdesini çek
+    appConfig.tolerance = parseFloat(document.getElementById('admin-tolerance').value) || 20;
+
     appConfig.items.forEach((item, index) => {
         item.name = document.getElementById(`i-name-${index}`).value;
         item.price = parseFloat(document.getElementById(`i-price-${index}`).value);
         item.action = document.getElementById(`i-action-${index}`).value;
     });
     await saveSettingsToDB();
-    alert("Ürünler ve fiyatlar başarıyla güncellendi kanka!");
+    alert("Ayarlar, ürünler ve yüzdelik oran başarıyla güncellendi kanka!");
     loadAdminSettings();
 });
 
@@ -299,32 +302,35 @@ async function saveSettingsToDB() {
     await setDoc(doc(db, "settings", "app_config_v2"), appConfig);
 }
 
-// --- YENİ BİRİM FİYAT VE ZEKİ SEÇİM MOTORU ---
+// --- YENİ ZEKİ SEÇİM MOTORU (% ARALIKLI) ---
 function getFunnyText(amount) {
     if (!appConfig.items || appConfig.items.length === 0) return "hesaplayamadım, bir şeyler ters gitti";
 
-    // 1. Sadece kullanıcının parasının yettiği (paraya eşit veya daha ucuz) eşyaları bul
-    let affordableItems = appConfig.items.filter(item => item.price <= amount);
+    // Panelden gelen yüzdeyi al, yoksa %20 kullan
+    let tolerance = appConfig.tolerance !== undefined ? appConfig.tolerance : 20;
+    
+    // Girdiği paranın % tolerans kadarı aşağısı ve yukarısını hesapla
+    let minPrice = amount * (1 - (tolerance / 100));
+    let maxPrice = amount * (1 + (tolerance / 100));
 
-    // 2. Parası en ucuz şeye bile yetmiyorsa dalga geç
+    // Bu aralıktaki tüm ürünleri bul (3 tane ile sınırlandırmıyoruz, ne varsa)
+    let affordableItems = appConfig.items.filter(item => item.price >= minPrice && item.price <= maxPrice);
+
+    // Joker Durum: Eğer bu aralıkta hiç ürün yoksa, sistem çökmesin diye eski mantıktaki gibi ucuz ürünlerden rastgele çeker
     if (affordableItems.length === 0) {
-        return "bu paraya sakız bile vermezler, biriktirmeye devam";
+        affordableItems = appConfig.items.filter(item => item.price <= amount);
+        if (affordableItems.length === 0) return "bu paraya sakız bile vermezler, biriktirmeye devam";
     }
 
-    // 3. Eşyaları fiyatına göre pahalıdan ucuza sırala
-    affordableItems.sort((a, b) => b.price - a.price);
+    // Seçilen havuzdan Tümüyle RASTGELE birini al
+    let selectedItem = affordableItems[Math.floor(Math.random() * affordableItems.length)];
 
-    // 4. Paranın yettiği EN PAHALI 3 ürünü al (Hep aynı şeyi önermesin diye çeşitlilik)
-    let topItems = affordableItems.slice(0, 3);
+    // Kaç adet alındığını hesapla. Ürün adamın parasından pahalıysa küsurat çıkar (örn: 0.8)
+    let count = amount / selectedItem.price;
+    // Eğer 1'den büyükse düz hesap (Math.floor), 1'den küçükse 0.x şeklinde göstersin
+    let displayCount = count >= 1 ? Math.floor(count) : count.toFixed(1);
 
-    // 5. Bu 3 üründen birini RASTGELE seç
-    let selectedItem = topItems[Math.floor(Math.random() * topItems.length)];
-
-    // 6. Seçilen üründen o paraya tam kaç tane alınabildiğini hesapla
-    let count = Math.floor(amount / selectedItem.price);
-
-    // Çıktıyı ver
-    return `tam ${count} adet ${selectedItem.name} ${selectedItem.action}`;
+    return `tam ${displayCount} adet ${selectedItem.name} ${selectedItem.action}`;
 }
 
 // --- KULLANICI İŞLEMLERİ VE TABLO/GRAFİK ---
