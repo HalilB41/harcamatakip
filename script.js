@@ -174,7 +174,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// --- YENİ ADMİN PANELİ FONKSİYONLARI ---
+// --- ADMİN PANELİ ---
 btnAdminPanel.addEventListener('click', async () => {
     dashboardView.classList.add('hidden');
     adminView.classList.remove('hidden');
@@ -209,7 +209,6 @@ async function loadAdminUsers() {
 }
 
 function loadAdminSettings() {
-    // Kategorileri Bas
     const catList = document.getElementById('admin-cat-list');
     catList.innerHTML = '';
     appConfig.categories.forEach((c, index) => {
@@ -221,11 +220,9 @@ function loadAdminSettings() {
         `;
     });
 
-    // Tolerance (Yüzdelik) Ayarını Bas
     const tolInput = document.getElementById('admin-tolerance');
     if(tolInput) tolInput.value = appConfig.tolerance !== undefined ? appConfig.tolerance : 20;
 
-    // Ürünleri Bas
     const itemList = document.getElementById('admin-item-list');
     itemList.innerHTML = '';
     appConfig.items.sort((a, b) => b.price - a.price).forEach((item, index) => {
@@ -283,9 +280,7 @@ window.deleteItem = async (index) => {
     }
 };
 
-// Item Güncellemelerini ve Yüzde Ayarını Kaydet
 document.getElementById('btn-save-items').addEventListener('click', async () => {
-    // Admin panelinden tolerans yüzdesini çek
     appConfig.tolerance = parseFloat(document.getElementById('admin-tolerance').value) || 20;
 
     appConfig.items.forEach((item, index) => {
@@ -302,31 +297,45 @@ async function saveSettingsToDB() {
     await setDoc(doc(db, "settings", "app_config_v2"), appConfig);
 }
 
-// --- YENİ ZEKİ SEÇİM MOTORU (% ARALIKLI) ADET OLMADAN ---
+// --- ZEKİ SEÇİM MOTORU (HATASI GİDERİLMİŞ HALİ) ---
 function getFunnyText(amount) {
     if (!appConfig.items || appConfig.items.length === 0) return "hesaplayamadım, bir şeyler ters gitti";
 
-    // Panelden gelen yüzdeyi al, yoksa %20 kullan
     let tolerance = appConfig.tolerance !== undefined ? appConfig.tolerance : 20;
-    
-    // Girdiği paranın % tolerans kadarı aşağısı ve yukarısını hesapla
     let minPrice = amount * (1 - (tolerance / 100));
     let maxPrice = amount * (1 + (tolerance / 100));
 
-    // Bu aralıktaki tüm ürünleri bul
+    // 1. O aralıkta ürün var mı bak
     let affordableItems = appConfig.items.filter(item => item.price >= minPrice && item.price <= maxPrice);
 
-    // Joker Durum: Eğer bu aralıkta hiç ürün yoksa, adamın parasına yeten herhangi bir şeyi bul
-    if (affordableItems.length === 0) {
-        affordableItems = appConfig.items.filter(item => item.price <= amount);
-        if (affordableItems.length === 0) return "bu paraya sakız bile vermezler, biriktirmeye devam";
+    if (affordableItems.length > 0) {
+        // Eğer aralıkta ürün varsa direkt rastgele birini yapıştır (adet yazmadan)
+        let selectedItem = affordableItems[Math.floor(Math.random() * affordableItems.length)];
+        return `${selectedItem.name} ${selectedItem.action}`;
+    } else {
+        // 2. EĞER ARALIKTA ÜRÜN YOKSA (Örn: adam 999.999 TL girdi, aralık boş)
+        // Adamın parasına yeten ürünleri bul
+        let cheaperItems = appConfig.items.filter(item => item.price <= amount);
+        
+        if (cheaperItems.length === 0) return "bu paraya sakız bile vermezler, biriktirmeye devam";
+
+        // Parasına yeten ürünleri pahalıdan ucuza sırala
+        cheaperItems.sort((a, b) => b.price - a.price);
+
+        // Hep aynı şeyi söylemesin diye en pahalı ilk 3 üründen birini rastgele seç
+        let topItems = cheaperItems.slice(0, 3);
+        let selectedItem = topItems[Math.floor(Math.random() * topItems.length)];
+
+        // Seçtiğimiz bu pahalı üründen kaç tane alabildiğini hesapla
+        let count = Math.floor(amount / selectedItem.price);
+
+        // 1 adetse yine düz yaz, birden fazlaysa "tam 5 adet tofaş alabilirdin" de
+        if (count === 1) {
+            return `${selectedItem.name} ${selectedItem.action}`;
+        } else {
+            return `tam ${count} adet ${selectedItem.name} ${selectedItem.action}`;
+        }
     }
-
-    // Seçilen havuzdan Tümüyle RASTGELE birini al
-    let selectedItem = affordableItems[Math.floor(Math.random() * affordableItems.length)];
-
-    // ADET YAZISINI VE KÜSÜRATLARI SİLDİK. DİREKT İSMİ YAPIŞTIRIYOR
-    return `${selectedItem.name} ${selectedItem.action}`;
 }
 
 // --- KULLANICI İŞLEMLERİ VE TABLO/GRAFİK ---
@@ -379,58 +388,116 @@ function initChart() {
     });
 }
 
+// --- GRAFİK VE YENİ ÖZET PANELİ GÜNCELLEMESİ ---
 function updateChartData() {
-    let labels = []; let dataObj = {}; const now = new Date();
+    let labels = []; 
+    let dataObj = {}; 
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+
+    let start = new Date();
+    let end = new Date(now);
+    let periodTitle = "";
+
     if(currentChartFilter === 'daily') {
+        start.setHours(0, 0, 0, 0);
+        periodTitle = "(Bugün)";
         for(let i=0; i<24; i++) { labels.push(`${i}:00`); dataObj[`${i}:00`] = 0; }
-        globalExpenses.forEach(exp => {
-            const expDate = exp.createdAt ? new Date(exp.createdAt.toMillis()) : new Date();
-            if(expDate.toDateString() === now.toDateString()) dataObj[`${expDate.getHours()}:00`] += exp.amount;
-        });
     } 
     else if(currentChartFilter === 'weekly') {
+        start.setDate(start.getDate() - 6);
+        start.setHours(0,0,0,0);
+        periodTitle = "(Son 7 Gün)";
         for(let i=6; i>=0; i--) {
             let d = new Date(); d.setDate(d.getDate() - i);
             let dateStr = d.toLocaleDateString('tr-TR', {day: 'numeric', month: 'short'});
             labels.push(dateStr); dataObj[dateStr] = 0;
         }
-        globalExpenses.forEach(exp => {
-            const expDate = exp.createdAt ? new Date(exp.createdAt.toMillis()) : new Date();
-            let dateStr = expDate.toLocaleDateString('tr-TR', {day: 'numeric', month: 'short'});
-            if(dataObj[dateStr] !== undefined) dataObj[dateStr] += exp.amount;
-        });
     }
     else if(currentChartFilter === 'monthly') {
+        start.setDate(start.getDate() - 29);
+        start.setHours(0,0,0,0);
+        periodTitle = "(Son 30 Gün)";
         for(let i=29; i>=0; i--) {
             let d = new Date(); d.setDate(d.getDate() - i);
             let dateStr = d.toLocaleDateString('tr-TR', {day: 'numeric', month: 'short'});
             labels.push(dateStr); dataObj[dateStr] = 0;
         }
-        globalExpenses.forEach(exp => {
-            const expDate = exp.createdAt ? new Date(exp.createdAt.toMillis()) : new Date();
-            let dateStr = expDate.toLocaleDateString('tr-TR', {day: 'numeric', month: 'short'});
-            if(dataObj[dateStr] !== undefined) dataObj[dateStr] += exp.amount;
-        });
     }
     else if(currentChartFilter === 'custom') {
-        const start = new Date(document.getElementById('start-date').value);
-        const end = new Date(document.getElementById('end-date').value);
-        end.setHours(23,59,59);
+        const sVal = document.getElementById('start-date').value;
+        const eVal = document.getElementById('end-date').value;
+        if(!sVal || !eVal) return; 
+        start = new Date(sVal); start.setHours(0,0,0,0);
+        end = new Date(eVal); end.setHours(23,59,59,999);
+        periodTitle = `(${start.toLocaleDateString('tr-TR')} - ${end.toLocaleDateString('tr-TR')})`;
         for(let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             let dateStr = d.toLocaleDateString('tr-TR', {day: 'numeric', month: 'short'});
             labels.push(dateStr); dataObj[dateStr] = 0;
         }
-        globalExpenses.forEach(exp => {
-            const expDate = exp.createdAt ? new Date(exp.createdAt.toMillis()) : new Date();
-            if(expDate >= start && expDate <= end) {
-                let dateStr = expDate.toLocaleDateString('tr-TR', {day: 'numeric', month: 'short'});
-                if(dataObj[dateStr] !== undefined) dataObj[dateStr] += exp.amount;
-            }
-        });
     }
+
+    document.getElementById('summary-period').innerText = periodTitle;
+
+    // Seçili tarihteki harcamaları filtrele
+    let filteredExps = globalExpenses.filter(exp => {
+        const expDate = exp.createdAt ? new Date(exp.createdAt.toMillis()) : new Date();
+        return expDate >= start && expDate <= end;
+    });
+
+    // Grafiğe Veri Basma
+    filteredExps.forEach(exp => {
+        const expDate = exp.createdAt ? new Date(exp.createdAt.toMillis()) : new Date();
+        if(currentChartFilter === 'daily') {
+            dataObj[`${expDate.getHours()}:00`] += exp.amount;
+        } else {
+            let dateStr = expDate.toLocaleDateString('tr-TR', {day: 'numeric', month: 'short'});
+            if(dataObj[dateStr] !== undefined) dataObj[dateStr] += exp.amount;
+        }
+    });
+
     expenseChart.data.labels = labels;
     expenseChart.data.datasets[0].data = labels.map(label => dataObj[label]);
     expenseChart.update();
+
+    // ÖZET PANELİNİ GÜNCELLE
+    renderSummary(filteredExps);
+}
+
+function renderSummary(expenses) {
+    const totalAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    document.getElementById('summary-total-amount').innerText = `${totalAmount.toLocaleString('tr-TR')} ₺`;
+
+    const catTotals = {};
+    expenses.forEach(exp => {
+        if(!catTotals[exp.category]) catTotals[exp.category] = 0;
+        catTotals[exp.category] += exp.amount;
+    });
+
+    const catContainer = document.getElementById('summary-categories');
+    catContainer.innerHTML = '';
+
+    if(Object.keys(catTotals).length === 0) {
+        catContainer.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">Bu dönemde hiç harcama yok aga, kralsın.</p>';
+        return;
+    }
+
+    // En çok harcanan kategorileri sıraya diz
+    const sortedCats = Object.entries(catTotals).sort((a,b) => b[1] - a[1]);
+
+    const getCatName = (id) => {
+        const c = appConfig.categories.find(x => x.id === id);
+        return c ? c.name : id;
+    };
+
+    sortedCats.forEach(([catId, amount]) => {
+        catContainer.innerHTML += `
+            <div class="summary-cat-item">
+                <span>${getCatName(catId)}</span>
+                <strong>${amount.toLocaleString('tr-TR')} ₺</strong>
+            </div>
+        `;
+    });
 }
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
