@@ -19,7 +19,7 @@ html, body {
 
 .highlight { color: var(--primary); }
 
-/* AUTH */
+/* AUTH (GİRİŞ EKRANI) */
 .auth-wrapper { display: flex; min-height: 100vh; align-items: center; justify-content: space-evenly; background: radial-gradient(circle at top left, #1a2333, #0b0f19); padding: 20px 8%; gap: 40px; width: 100%; }
 .auth-left { max-width: 450px; }
 .brand-title { font-size: 3.5rem; line-height: 1.1; margin-bottom: 20px; }
@@ -108,8 +108,12 @@ canvas { width: 100% !important; height: 100% !important; }
     /* Genel sınırları güvence altına alalım */
     html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; }
     
-    .auth-wrapper { flex-direction: column; text-align: center; padding: 20px 5%; }
-    .auth-box { padding: 25px 20px; }
+    /* GİRİŞ EKRANI MOBİL DÜZELTMELERİ (YAZIYI ALT ALTA ALMA) */
+    .auth-wrapper { flex-direction: column; text-align: center; padding: 40px 5%; justify-content: center; }
+    .auth-box { padding: 30px 20px; width: 100%; }
+    .brand-title { font-size: 2.8rem; line-height: 1.2; margin-bottom: 15px; }
+    .brand-title .highlight { display: block; margin-top: 5px; } /* Takibim yazısını alta atar */
+    .brand-desc { font-size: 0.95rem; padding: 0 10px; margin-bottom: 25px; }
     
     /* Navbar'ın dışarı taşmasını engelliyoruz */
     .navbar { 
@@ -117,12 +121,12 @@ canvas { width: 100% !important; height: 100% !important; }
         flex-wrap: wrap; 
         gap: 10px; 
     }
-    .navbar h2 { font-size: 1.3rem; } /* Logoyu mobilde daralttık */
+    .navbar h2 { font-size: 1.3rem; }
     
     #btn-admin-panel { padding: 8px 12px; font-size: 0.8rem; }
     .profile-icon { width: 36px; height: 36px; font-size: 1rem; }
     
-    /* Grid tek sütun, taşma imkansız */
+    /* Grid tek sütun */
     .dashboard-grid { 
         display: flex !important; 
         flex-direction: column !important; 
@@ -135,13 +139,13 @@ canvas { width: 100% !important; height: 100% !important; }
     .summary-section { order: 3; }  
     .history-section { order: 4; }  
 
-    /* Panellerin iç boşluklarını daralttık ki mobilde ekranı patlatmasın */
+    /* Panellerin iç boşluklarını daralttık */
     .panel { padding: 20px 15px !important; }
 
     .history-header { flex-direction: column; gap: 10px; align-items: stretch; }
     .history-header select { width: 100%; }
     
-    /* Grafik Boyutu Küçültüldü ve Taşması Kesin Önlendi */
+    /* Grafik Boyutu Küçültüldü */
     .chart-section { width: 100%; overflow: hidden; }
     .chart-filters { justify-content: center; gap: 5px; }
     .filter-btn { padding: 6px 12px; font-size: 0.75rem; }
@@ -154,7 +158,7 @@ canvas { width: 100% !important; height: 100% !important; }
     .summary-cat-item { min-width: 130px; padding: 12px; }
     .summary-cat-item strong { font-size: 1rem; }
 
-    /* YENİ NESİL KART TASARIMI (Taşma İptal) */
+    /* KART TASARIMI */
     .table-container { overflow-x: hidden; width: 100%; }
     .history-table thead { display: none; }
     .history-table tbody { display: flex; flex-direction: column; gap: 15px; width: 100%; }
