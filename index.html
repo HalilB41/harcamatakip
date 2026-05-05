@@ -9,7 +9,9 @@
     <meta name="theme-color" content="#00ff88">
     <link rel="apple-touch-icon" href="icon-192.png">
     
-    <link rel="stylesheet" href="style.css">
+    <!-- CACHE KIRICI -->
+    <link rel="stylesheet" href="style.css?v=3">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -18,6 +20,8 @@
     <!-- VİTRİN VE AUTH -->
     <div id="auth-view" class="auth-wrapper">
         <div class="auth-left">
+            <!-- YENİ: GİRİŞ EKRANI LOGOSU -->
+            <img src="logo.png" alt="Harcama Takibim Logo" class="main-logo">
             <h1 class="brand-title">Harcama<span class="highlight">Takibim</span></h1>
             <p class="brand-desc">Paran nereye eriyor? Ufak tefek harcamaların ay sonu faturasını gör, acı gerçekle şık bir şekilde yüzleş.</p>
         </div>
@@ -49,11 +53,15 @@
     <!-- ANA PANEL (DASHBOARD) -->
     <div id="dashboard-view" class="hidden">
         <nav class="navbar">
-            <h2>Harcama<span class="highlight">Takibim</span></h2>
+            <!-- YENİ: ÜST MENÜ LOGOSU VE YAZISI -->
+            <div class="nav-brand">
+                <img src="logo.png" alt="Logo" class="nav-logo">
+                <h2>Harcama<span class="highlight">Takibim</span></h2>
+            </div>
+            
             <div class="user-menu">
                 <button id="btn-admin-panel" class="action-btn hidden" style="background: #f59e0b; color: #000; padding: 8px 16px; width: auto; font-size: 0.9rem;">👑 Admin</button>
                 
-                <!-- YENİ PROFİL AÇILIR MENÜSÜ BURADA AGA -->
                 <div class="profile-dropdown">
                     <button id="profile-btn" class="profile-icon"><i class="fa-solid fa-user"></i></button>
                     <div id="profile-menu" class="dropdown-content hidden">
@@ -67,12 +75,10 @@
         </nav>
 
         <div class="dashboard-grid">
-            <!-- Sol Sütun (Mobilde En Üstte Çıkması İçin CSS'te Order Verdik): Yeni Harcama Ekleme -->
             <div class="add-section panel">
                 <h3>Yeni Harcama Ekle</h3>
                 <div class="form-group">
                     <select id="category">
-                        <!-- JS DİNAMİK OLARAK DOLDURACAK -->
                         <option value="" disabled selected>Kategori Seç...</option>
                     </select>
                 </div>
@@ -90,7 +96,6 @@
                 </div>
             </div>
 
-            <!-- Sağ Sütun (Mobilde Harcamanın Altında): Grafik -->
             <div class="chart-section panel">
                 <h3>Harcama Grafiği</h3>
                 <div class="chart-filters">
@@ -110,7 +115,6 @@
                 </div>
             </div>
 
-            <!-- Alt: Özet Paneli -->
             <div class="summary-section panel" style="grid-column: 1 / -1;">
                 <h3>Harcama Özeti <span id="summary-period" style="font-size: 0.9rem; color: var(--text-muted); font-weight: normal;"></span></h3>
                 <div class="summary-content">
@@ -119,17 +123,14 @@
                         <h2 id="summary-total-amount">0 ₺</h2>
                     </div>
                     <div class="summary-categories" id="summary-categories">
-                        <!-- JS Dinamik Dolduracak -->
                     </div>
                 </div>
             </div>
 
-            <!-- En Alt: Geçmiş Tablosu (Mobilde Kartlar) -->
             <div class="history-section panel" style="grid-column: 1 / -1;">
                 <div class="history-header">
                     <h3>Harcama Geçmişi</h3>
                     <select id="history-filter">
-                        <!-- JS DİNAMİK OLARAK DOLDURACAK -->
                         <option value="all">Tüm Kategoriler</option>
                     </select>
                 </div>
@@ -177,7 +178,6 @@
         </div>
 
         <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr;">
-            <!-- Sol: Son Kullanıcılar -->
             <div class="panel" style="border-top: 4px solid #38bdf8;">
                 <h3>Son Kayıt Olan Kullanıcılar</h3>
                 <div class="table-container" style="max-height: 400px; overflow-y: auto;">
@@ -194,7 +194,6 @@
                 </div>
             </div>
 
-            <!-- Sağ: Kategori Yönetimi -->
             <div class="panel" style="border-top: 4px solid var(--primary);">
                 <h3>Sistem Kategorilerini Yönet</h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Sitedeki harcama kategorilerini buradan ekleyip silebilirsin.</p>
@@ -206,11 +205,9 @@
                 </div>
                 
                 <ul id="admin-cat-list" class="admin-list">
-                    <!-- JS Dolduracak -->
                 </ul>
             </div>
 
-            <!-- Alt: Yeni Birim Fiyat Yönetimi -->
             <div class="panel" style="grid-column: 1 / -1; border-top: 4px solid #f59e0b;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <div>
@@ -232,7 +229,6 @@
                 </div>
                 
                 <div id="admin-item-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 10px; max-height: 500px; overflow-y: auto; padding-right: 10px;">
-                    <!-- JS Dolduracak -->
                 </div>
             </div>
         </div>
