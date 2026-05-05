@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     
     <!-- CACHE KIRICI -->
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,7 +20,6 @@
     <!-- VİTRİN VE AUTH -->
     <div id="auth-view" class="auth-wrapper">
         <div class="auth-left">
-            <!-- YENİ: GİRİŞ EKRANI LOGOSU -->
             <img src="logo.png" alt="Harcama Takibim Logo" class="main-logo">
             <h1 class="brand-title">Harcama<span class="highlight">Takibim</span></h1>
             <p class="brand-desc">Paran nereye eriyor? Ufak tefek harcamaların ay sonu faturasını gör, acı gerçekle şık bir şekilde yüzleş.</p>
@@ -39,6 +38,16 @@
                     <button type="submit" class="action-btn">Giriş Yap</button>
                 </form>
 
+                <!-- GOOGLE İLE GİRİŞ BUTONU -->
+                <div style="display: flex; align-items: center; margin: 15px 0; color: var(--text-muted); font-size: 0.85rem;">
+                    <hr style="flex: 1; border: 0; border-bottom: 1px solid #333;">
+                    <span style="padding: 0 10px;">VEYA</span>
+                    <hr style="flex: 1; border: 0; border-bottom: 1px solid #333;">
+                </div>
+                <button id="btn-google-login" class="action-btn" style="background: #fff; color: #000; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i class="fa-brands fa-google" style="color: #db4437;"></i> Google ile Giriş Yap
+                </button>
+
                 <form id="register-form" class="hidden">
                     <input type="text" id="reg-username" placeholder="Kullanıcı Adı" required>
                     <input type="email" id="reg-email" placeholder="E-posta" required>
@@ -53,7 +62,6 @@
     <!-- ANA PANEL (DASHBOARD) -->
     <div id="dashboard-view" class="hidden">
         <nav class="navbar">
-            <!-- YENİ: ÜST MENÜ LOGOSU VE YAZISI -->
             <div class="nav-brand">
                 <img src="logo.png" alt="Logo" class="nav-logo">
                 <h2>Harcama<span class="highlight">Takibim</span></h2>
@@ -235,5 +243,16 @@
     </div>
 
     <script type="module" src="script.js"></script>
+    
+    <!-- PWABUILDER İÇİN DOĞRU PWA KURULUMU -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SW Başarılı:', reg.scope))
+                    .catch(err => console.log('SW Hatası:', err));
+            });
+        }
+    </script>
 </body>
 </html>

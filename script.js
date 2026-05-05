@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, query, where, setDoc, getDoc, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -92,7 +92,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// YENİ: ŞİFRE SIFIRLAMA
+// ŞİFRE SIFIRLAMA
 document.getElementById('btn-change-pass').addEventListener('click', async () => {
     const email = auth.currentUser.email;
     if(confirm(`${email} adresine şifre sıfırlama linki göndereyim mi kanka?`)) {
@@ -113,6 +113,32 @@ document.getElementById('tab-login').addEventListener('click', (e) => {
 document.getElementById('tab-register').addEventListener('click', (e) => {
     e.target.classList.add('active'); document.getElementById('tab-login').classList.remove('active');
     document.getElementById('register-form').classList.remove('hidden'); document.getElementById('login-form').classList.add('hidden');
+});
+
+// --- GOOGLE İLE GİRİŞ YAP MOTORU ---
+const googleProvider = new GoogleAuthProvider();
+
+document.getElementById('btn-google-login').addEventListener('click', async () => {
+    try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+        
+        // Kullanıcı veritabanında (Firestore) var mı diye kontrol et
+        const q = query(collection(db, "users"), where("email", "==", user.email));
+        const querySnapshot = await getDocs(q);
+        
+        // Eğer ilk kez giriyorsa sisteme kullanıcı olarak kaydet
+        if (querySnapshot.empty) {
+            await setDoc(doc(db, "users", user.uid), { 
+                username: user.displayName || "Yeni Kanki", 
+                email: user.email, 
+                role: "user", 
+                createdAt: serverTimestamp() 
+            });
+        }
+    } catch (error) {
+        document.getElementById('auth-error').innerText = "Google girişi iptal edildi veya hata oldu kanka.";
+    }
 });
 
 document.getElementById('register-form').addEventListener('submit', async (e) => {
@@ -523,14 +549,3 @@ document.getElementById('btn-save-edit').addEventListener('click', async () => {
     document.getElementById('edit-modal').classList.add('hidden');
     fetchAndRenderData();
 });
-
-// --- PWA KURULUMU ---
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function() {
-        navigator.serviceWorker.register("/sw.js").then(res => {
-            console.log("PWA Motoru aktif aga! Uygulama kurulmaya hazır.");
-        }).catch(err => {
-            console.log("PWA Motoru patladı:", err);
-        });
-    });
-}
