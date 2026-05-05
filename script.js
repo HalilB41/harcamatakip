@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, query, where, setDoc, getDoc, doc, deleteDoc, updateDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -52,55 +52,8 @@ async function loadAppConfig() {
                 { name: "0.5L su", price: 5, action: "alabilirdin" },
                 { name: "gofret", price: 15, action: "alabilirdin" },
                 { name: "ayran", price: 20, action: "alabilirdin" },
-                { name: "torpil", price: 20, action: "patlatabilirdin" },
-                { name: "kurşun kalem", price: 25, action: "alabilirdin" },
-                { name: "albeni bisküvi", price: 40, action: "alabilirdin" },
-                { name: "cips", price: 50, action: "alabilirdin" },
-                { name: "pizza tadında simit", price: 85, action: "alabilirdin" },
-                { name: "magnum dondurma", price: 95, action: "alabilirdin" },
-                { name: "bardak", price: 100, action: "alabilirdin" },
-                { name: "çiğköfte dürüm", price: 110, action: "yiyebilirdin" },
-                { name: "lahmacun", price: 125, action: "yiyebilirdin" },
-                { name: "defter", price: 150, action: "alabilirdin" },
-                { name: "komagene double dürüm + ayran", price: 150, action: "yiyebilirdin" },
-                { name: "clash of clans taş yığını paketi", price: 199, action: "alabilirdin" },
-                { name: "havlu", price: 250, action: "alabilirdin" },
-                { name: "terlik", price: 250, action: "alabilirdin" },
-                { name: "packet burger sınırsız içecek menü", price: 285, action: "yiyebilirdin" },
-                { name: "pastanede tek kişilik pasta", price: 299, action: "yiyebilirdin" },
-                { name: "kfc doyuran menü", price: 300, action: "yiyebilirdin" },
-                { name: "adana dürüm", price: 350, action: "yiyebilirdin" },
-                { name: "çöp kutusu", price: 450, action: "alabilirdin" },
-                { name: "gariban mouse", price: 500, action: "alabilirdin" },
-                { name: "dominos xl pizza", price: 599, action: "yiyebilirdin" },
-                { name: "laptop soğutucu", price: 650, action: "alabilirdin" },
-                { name: "mousepad", price: 750, action: "alabilirdin" },
-                { name: "eşofman", price: 999, action: "alabilirdin" },
-                { name: "gta 5", price: 1200, action: "alabilirdin" },
-                { name: "nevresim takımı", price: 1250, action: "alabilirdin" },
-                { name: "sakarya aquapark giriş bileti", price: 1500, action: "alabilirdin" },
-                { name: "motorunun deposunu fulleme", price: 1500, action: "yapabilirdin" },
-                { name: "logitech mouse", price: 1700, action: "alabilirdin" },
-                { name: "nike çanta", price: 2000, action: "alabilirdin" },
-                { name: "hamam masaj jakuzi", price: 2500, action: "yapabilirdin" },
-                { name: "giriş seviyesi monitör", price: 3000, action: "alabilirdin" },
-                { name: "ortalama bir airfryer", price: 3200, action: "alabilirdin" },
-                { name: "1 yıllık microsoft office aboneliği", price: 3250, action: "alabilirdin" },
-                { name: "bodrumda tatil", price: 12000, action: "yapabilirdin" },
-                { name: "apple watch se 3 gps alüminyum kasa", price: 13000, action: "alabilirdin" },
-                { name: "lenovo loq 5060", price: 48000, action: "alabilirdin" },
-                { name: "iyi bir oyuncu kasası", price: 55000, action: "toplayabilirdin" },
-                { name: "sıfır arora cappucinino 50cc motor", price: 72500, action: "alabilirdin" },
-                { name: "iphone 17", price: 75000, action: "alabilirdin" },
                 { name: "tofaş", price: 118695, action: "alabilirdin" },
-                { name: "kriptoya ortalama bir bakiye ile giriş", price: 150000, action: "yapabilirdin" },
-                { name: "ford escort", price: 167000, action: "alabilirdin" },
-                { name: "bedelli askerlik", price: 425000, action: "yapabilirdin" },
-                { name: "600cc ve üzeri bir motor", price: 485000, action: "alabilirdin" },
-                { name: "araba egea", price: 1200000, action: "alabilirdin" },
-                { name: "2+1 ev", price: 2500000, action: "alabilirdin" },
-                { name: "3+1 ev", price: 3500000, action: "alabilirdin" },
-                { name: "giriş seviye bir tekne", price: 3500000, action: "alabilirdin" }
+                { name: "bedelli askerlik", price: 425000, action: "yapabilirdin" }
             ]
         };
         await setDoc(docRef, appConfig);
@@ -125,7 +78,34 @@ document.getElementById('category').addEventListener('change', (e) => {
     document.getElementById('detail').placeholder = cat ? cat.placeholder : "Örn: Ne aldın?";
 });
 
-// --- AUTH ---
+// --- AUTH & PROFİL MENÜSÜ AÇ/KAPA ---
+const profileBtn = document.getElementById('profile-btn');
+const profileMenu = document.getElementById('profile-menu');
+
+profileBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    profileMenu.classList.toggle('hidden');
+});
+document.addEventListener('click', (e) => {
+    if (!profileBtn.contains(e.target) && !profileMenu.contains(e.target)) {
+        profileMenu.classList.add('hidden');
+    }
+});
+
+// YENİ: ŞİFRE SIFIRLAMA
+document.getElementById('btn-change-pass').addEventListener('click', async () => {
+    const email = auth.currentUser.email;
+    if(confirm(`${email} adresine şifre sıfırlama linki göndereyim mi kanka?`)) {
+        try {
+            await sendPasswordResetEmail(auth, email);
+            alert("Sıfırlama linki mailine yollandı, kontrol et!");
+            profileMenu.classList.add('hidden');
+        } catch(error) {
+            alert("Hata oldu: " + error.message);
+        }
+    }
+});
+
 document.getElementById('tab-login').addEventListener('click', (e) => {
     e.target.classList.add('active'); document.getElementById('tab-register').classList.remove('active');
     document.getElementById('login-form').classList.remove('hidden'); document.getElementById('register-form').classList.add('hidden');
@@ -297,7 +277,7 @@ async function saveSettingsToDB() {
     await setDoc(doc(db, "settings", "app_config_v2"), appConfig);
 }
 
-// --- ZEKİ SEÇİM MOTORU (HATASI GİDERİLMİŞ HALİ) ---
+// --- ZEKİ SEÇİM MOTORU ---
 function getFunnyText(amount) {
     if (!appConfig.items || appConfig.items.length === 0) return "hesaplayamadım, bir şeyler ters gitti";
 
@@ -305,31 +285,20 @@ function getFunnyText(amount) {
     let minPrice = amount * (1 - (tolerance / 100));
     let maxPrice = amount * (1 + (tolerance / 100));
 
-    // 1. O aralıkta ürün var mı bak
     let affordableItems = appConfig.items.filter(item => item.price >= minPrice && item.price <= maxPrice);
 
     if (affordableItems.length > 0) {
-        // Eğer aralıkta ürün varsa direkt rastgele birini yapıştır (adet yazmadan)
         let selectedItem = affordableItems[Math.floor(Math.random() * affordableItems.length)];
         return `${selectedItem.name} ${selectedItem.action}`;
     } else {
-        // 2. EĞER ARALIKTA ÜRÜN YOKSA (Örn: adam 999.999 TL girdi, aralık boş)
-        // Adamın parasına yeten ürünleri bul
         let cheaperItems = appConfig.items.filter(item => item.price <= amount);
-        
         if (cheaperItems.length === 0) return "bu paraya sakız bile vermezler, biriktirmeye devam";
-
-        // Parasına yeten ürünleri pahalıdan ucuza sırala
         cheaperItems.sort((a, b) => b.price - a.price);
 
-        // Hep aynı şeyi söylemesin diye en pahalı ilk 3 üründen birini rastgele seç
         let topItems = cheaperItems.slice(0, 3);
         let selectedItem = topItems[Math.floor(Math.random() * topItems.length)];
-
-        // Seçtiğimiz bu pahalı üründen kaç tane alabildiğini hesapla
         let count = Math.floor(amount / selectedItem.price);
 
-        // 1 adetse yine düz yaz, birden fazlaysa "tam 5 adet tofaş alabilirdin" de
         if (count === 1) {
             return `${selectedItem.name} ${selectedItem.action}`;
         } else {
@@ -388,7 +357,6 @@ function initChart() {
     });
 }
 
-// --- GRAFİK VE YENİ ÖZET PANELİ GÜNCELLEMESİ ---
 function updateChartData() {
     let labels = []; 
     let dataObj = {}; 
@@ -439,13 +407,11 @@ function updateChartData() {
 
     document.getElementById('summary-period').innerText = periodTitle;
 
-    // Seçili tarihteki harcamaları filtrele
     let filteredExps = globalExpenses.filter(exp => {
         const expDate = exp.createdAt ? new Date(exp.createdAt.toMillis()) : new Date();
         return expDate >= start && expDate <= end;
     });
 
-    // Grafiğe Veri Basma
     filteredExps.forEach(exp => {
         const expDate = exp.createdAt ? new Date(exp.createdAt.toMillis()) : new Date();
         if(currentChartFilter === 'daily') {
@@ -460,7 +426,6 @@ function updateChartData() {
     expenseChart.data.datasets[0].data = labels.map(label => dataObj[label]);
     expenseChart.update();
 
-    // ÖZET PANELİNİ GÜNCELLE
     renderSummary(filteredExps);
 }
 
@@ -482,9 +447,7 @@ function renderSummary(expenses) {
         return;
     }
 
-    // En çok harcanan kategorileri sıraya diz
     const sortedCats = Object.entries(catTotals).sort((a,b) => b[1] - a[1]);
-
     const getCatName = (id) => {
         const c = appConfig.categories.find(x => x.id === id);
         return c ? c.name : id;
@@ -560,3 +523,14 @@ document.getElementById('btn-save-edit').addEventListener('click', async () => {
     document.getElementById('edit-modal').classList.add('hidden');
     fetchAndRenderData();
 });
+
+// --- PWA KURULUMU ---
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+        navigator.serviceWorker.register("/sw.js").then(res => {
+            console.log("PWA Motoru aktif aga! Uygulama kurulmaya hazır.");
+        }).catch(err => {
+            console.log("PWA Motoru patladı:", err);
+        });
+    });
+}
